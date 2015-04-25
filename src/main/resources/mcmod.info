@@ -1,0 +1,16 @@
+[
+{
+  "modid": "prometheus-integration",
+  "name": "Prometheus Integration",
+  "description": "Exports statistics to the Prometheus monitoring format.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Baughn"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
