@@ -1,0 +1,13 @@
+// Forge stats
+job:ticks:rate1m = avg(rate(ticks[1m])) by (job)
+instance:tick_time_ms:rate1m = rate(tick_time_sum{job="minecraft"}[1m]) / rate(tick_time_count{job="minecraft"}[1m]) * 1000
+world:world_time_ms:rate1m = rate(world_time_sum{job="minecraft"}[1m]) / rate(world_time_count{job="minecraft"}[1m]) * 1000
+
+// Players
+name:playtime:sum1d = sum(sum_over_time(present{job="minecraft"}[1d])) by(name, job)
+job:playtime:sum1d = sum(name:playtime:sum1d) by(job)
+
+// JVM stats
+job:jvm_memory_bytes_used = sum(jvm_memory_bytes_used{job="minecraft"}) by (job)
+job:jvm_memory_bytes_committed = sum(jvm_memory_bytes_committed{job="minecraft"}) by (job)
+job:jvm_memory_bytes_max = sum(jvm_memory_bytes_max{job="minecraft"}) by (job)

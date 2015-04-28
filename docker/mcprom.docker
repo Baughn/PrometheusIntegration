@@ -1,0 +1,8 @@
+FROM prom/prometheus
+MAINTAINER Svein Ove Aas <sveina@gmail.com>
+
+ADD mcprom.conf /etc/prometheus/prometheus.conf
+ADD mcprom.rules /etc/prometheus/prometheus.rules
+
+RUN mv /bin/prometheus /bin/prometheus.real
+ADD start.sh /bin/prometheus

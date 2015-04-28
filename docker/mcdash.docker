@@ -1,0 +1,7 @@
+FROM prom/promdash
+MAINTAINER Svein Ove Aas <sveina@gmail.com>
+
+ENV DATABASE_URL sqlite3:/db/dash.sqlite3
+ADD dash.sqlite3 /db/dash.sqlite3
+RUN rake db:migrate
+VOLUME /db
