@@ -14,6 +14,7 @@ import io.prometheus.client.hotspot.DefaultExports
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.World
+import net.minecraftforge.common.ForgeChunkManager
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
 import net.minecraftforge.event.terraingen.ChunkProviderEvent
@@ -61,18 +62,34 @@ class PrometheusIntegration {
 
 
 object eventHandler {
-    // Variables exposed.
+    // Tick rate.
     val ticks = Counter.build().name("ticks").help("Server ticks").register()
     val tickTime = Summary.build().name("tick_time").help("Server tick time").register()
     val worldTickTime = Summary.build().name("world_time").labelNames("world").help("World tick time").register()
+    // World generation.
     val worldgen = Counter.build().name("worldgen").help("Chunks generated").register()
+    // Players.
     val present = Gauge.build().name("present").labelNames("name").help("Is player present").register()
+    // Possible load causes.
+    val chunksLoaded = Gauge.build().name("chunks_loaded").labelNames("cause", "world")
+            .help("Count of chunks loaded, by cause").register()
 
+    val server: MinecraftServer by lazy {
+        MinecraftServer.getServer()
+    }
     var serverTimer: Summary.Timer? = null
     var worldTimer: Summary.Timer? = null
 
     var serverTicks = 0
 
+    private fun setLoadedChunks() {
+        for (world in server.worldServers) {
+            val total = world.chunkProvider.loadedChunkCount
+            val forced = ForgeChunkManager.getPersistentChunksFor(world).size()
+            chunksLoaded.labels("chunkloader", world.provider.dimensionName).set(forced.toDouble())
+            chunksLoaded.labels("other", world.provider.dimensionName).set((total - forced).toDouble())
+        }
+    }
 
     @SubscribeEvent(receiveCanceled = true)
     fun onServerTick(event: TickEvent.ServerTickEvent) {
@@ -86,8 +103,9 @@ object eventHandler {
             ticks.inc()
         }
 
-        if (serverTicks % 60 == 47) {
-            setPlayers(MinecraftServer.getServer().entityWorld)
+        when (serverTicks % 60) {
+            27 -> setLoadedChunks()
+            47 -> setPlayers()
         }
     }
 
@@ -108,16 +126,18 @@ object eventHandler {
 
     var seenPreviously = HashSet<String>()
 
-    fun setPlayers(world: World) {
+    fun setPlayers() {
         val seenNow = HashSet<String>()
 
         // Set all new players' values to 1.
-        for (obj in world.playerEntities) {
-            if (obj is EntityPlayer) {
-                val name = obj.displayName
-                seenNow.add(name)
-                if (!seenPreviously.contains(name)) {
-                    present.labels(name).set(1.0)
+        for (world in server.worldServers) {
+            for (obj in world.playerEntities) {
+                if (obj is EntityPlayer) {
+                    val name = obj.displayName
+                    seenNow.add(name)
+                    if (!seenPreviously.contains(name)) {
+                        present.labels(name).set(1.0)
+                    }
                 }
             }
         }
