@@ -1,23 +1,23 @@
 package info.brage.minecraft.prometheus
 
-import cpw.mods.fml.common.FMLCommonHandler
-import cpw.mods.fml.common.Mod
-import cpw.mods.fml.common.event.FMLInitializationEvent
-import cpw.mods.fml.common.event.FMLPreInitializationEvent
-import cpw.mods.fml.common.eventhandler.SubscribeEvent
-import cpw.mods.fml.common.gameevent.TickEvent
 import io.prometheus.client.Counter
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.MetricsServlet
 import io.prometheus.client.hotspot.DefaultExports
 import net.minecraft.entity.player.EntityPlayer
-import net.minecraft.server.MinecraftServer
-import net.minecraft.world.World
 import net.minecraftforge.common.ForgeChunkManager
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
-import net.minecraftforge.event.terraingen.ChunkProviderEvent
+import net.minecraftforge.event.terraingen.ChunkGeneratorEvent
+import net.minecraftforge.event.terraingen.OreGenEvent
+import net.minecraftforge.event.terraingen.PopulateChunkEvent
+import net.minecraftforge.fml.common.FMLCommonHandler
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.fml.common.event.FMLInitializationEvent
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.common.gameevent.TickEvent
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
@@ -27,7 +27,7 @@ import java.util.*
 const val MODID = "prometheus-integration"
 const val VERSION = "1.0"
 
-@Mod(modid = MODID, version = VERSION, acceptedMinecraftVersions="[1.7.10,)", acceptableRemoteVersions = "*")
+@Mod(modid = MODID, version = VERSION, acceptedMinecraftVersions="[1.10.2,)", acceptableRemoteVersions = "*")
 class PrometheusIntegration {
 
     var jettyPort: Int = 0
@@ -53,10 +53,9 @@ class PrometheusIntegration {
         // Get some Hotspot stats.
         DefaultExports.initialize()
 
-        // Connect to FML.
+        // Connect to Forge.
         MinecraftForge.EVENT_BUS.register(eventHandler)
-        FMLCommonHandler.instance().bus().register(eventHandler)
-        //MinecraftForge.TERRAIN_GEN_BUS.register(events);
+        MinecraftForge.TERRAIN_GEN_BUS.register(eventHandler)
     }
 }
 
@@ -74,24 +73,26 @@ object eventHandler {
     val chunksLoaded = Gauge.build().name("chunks_loaded").labelNames("cause", "world")
             .help("Count of chunks loaded, by cause").register()
 
-    val server: MinecraftServer by lazy {
-        MinecraftServer.getServer()
+    val server by lazy {
+        FMLCommonHandler.instance().minecraftServerInstance
     }
+
     var serverTimer: Summary.Timer? = null
     var worldTimer: Summary.Timer? = null
 
     var serverTicks = 0
 
     private fun setLoadedChunks() {
-        for (world in server.worldServers) {
+        for (world in server.worlds) {
             val total = world.chunkProvider.loadedChunkCount
             val forced = ForgeChunkManager.getPersistentChunksFor(world).size()
-            chunksLoaded.labels("chunkloader", world.provider.dimensionName).set(forced.toDouble())
-            chunksLoaded.labels("other", world.provider.dimensionName).set((total - forced).toDouble())
+            val name = world.provider.dimensionType.getName()
+            chunksLoaded.labels("chunkloader", name).set(forced.toDouble())
+            chunksLoaded.labels("other", name).set((total - forced).toDouble())
         }
     }
 
-    @SubscribeEvent(receiveCanceled = true)
+    @SubscribeEvent
     fun onServerTick(event: TickEvent.ServerTickEvent) {
         serverTicks++
 
@@ -109,18 +110,18 @@ object eventHandler {
         }
     }
 
-    @SubscribeEvent(receiveCanceled = true)
+    @SubscribeEvent
     fun onWorldTick(event: TickEvent.WorldTickEvent) {
         if (event.phase == TickEvent.Phase.START) {
-            worldTimer = worldTickTime.labels(event.world.provider.dimensionName).startTimer()
+            worldTimer = worldTickTime.labels(event.world.provider.dimensionType.getName()).startTimer()
         } else if (event.phase == TickEvent.Phase.END) {
             worldTimer!!.observeDuration()
             worldTimer = null
         }
     }
 
-    @SubscribeEvent(receiveCanceled = true)
-    fun onWorldGen(event: ChunkProviderEvent.ReplaceBiomeBlocks) {
+    @SubscribeEvent
+    fun onWorldGen(event: PopulateChunkEvent.Pre) {
         worldgen.inc()
     }
 
@@ -130,10 +131,10 @@ object eventHandler {
         val seenNow = HashSet<String>()
 
         // Set all new players' values to 1.
-        for (world in server.worldServers) {
+        for (world in server.worlds) {
             for (obj in world.playerEntities) {
                 if (obj is EntityPlayer) {
-                    val name = obj.displayName
+                    val name = obj.displayNameString
                     seenNow.add(name)
                     if (!seenPreviously.contains(name)) {
                         present.labels(name).set(1.0)
