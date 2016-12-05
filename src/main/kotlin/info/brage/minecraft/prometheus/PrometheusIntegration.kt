@@ -63,8 +63,16 @@ class PrometheusIntegration {
 object eventHandler {
     // Tick rate.
     val ticks = Counter.build().name("ticks").help("Server ticks").register()
-    val tickTime = Summary.build().name("tick_time").help("Server tick time").register()
-    val worldTickTime = Summary.build().name("world_time").labelNames("world").help("World tick time").register()
+    val tickTime = Summary.build().name("tick_time").help("Server tick time")
+        .quantile(0.5, 0.05)
+        .quantile(0.9, 0.01)
+        .quantile(0.95, 0.01)
+        .register()
+    val worldTickTime = Summary.build().name("world_time").labelNames("world").help("World tick time")
+        .quantile(0.5, 0.05)
+        .quantile(0.9, 0.01)
+        .quantile(0.95, 0.01)
+        .register()
     // World generation.
     val worldgen = Counter.build().name("worldgen").help("Chunks generated").register()
     // Players.
