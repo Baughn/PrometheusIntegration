@@ -88,16 +88,18 @@ task sourcesJar(type: Jar) {
 }
 
 curseforge {
-    apiKey = curseForgeApiKey
+    apiKey = project.hasProperty('curseForgeApiKey') ? project.curseForgeApiKey : ""
     project {
         id = '254573'
         changelogType = 'markdown'
         changelog = file('changelog.md')
         releaseType = 'alpha'
+        addGameVersion "1.10.2"
+        addGameVersion "Java 8"
         relations {
             requiredLibrary 'shadowfacts-forgelin'
         }
-        mainArtifact(jar) {
+        mainArtifact(shadowJar) {
             displayName = "Prometheus-Integration $project.version"
         }
         addArtifact(sourcesJar) {
@@ -122,4 +124,17 @@ shadowJar {
     relocate "io.prometheus", "info.brage.repack.io.prometheus"
     relocate "org.eclipse", "info.brage.repack.org.eclipse"
     relocate "org.jetbrains", "info.brage.repack.org.jetbrains"
+}
+
+tasks.build.dependsOn sourceJar, shadowJar
+
+artifacts {
+    archives shadowJar
+    archives sourceJar
+}
+
+reobf { shadowJar { mappingType = 'SEARGE' } }
+tasks.reobfShadowJar.mustRunAfter shadowJar
+afterEvaluate {
+	tasks.curseforge254573.dependsOn reobfShadowJar
 }
