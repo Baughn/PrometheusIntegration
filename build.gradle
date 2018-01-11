@@ -15,7 +15,7 @@ buildscript {
 
 plugins {
     id 'com.matthewprenger.cursegradle' version '1.0.9'
-    id "com.github.johnrengelman.shadow" version "1.2.4"
+    id "com.github.johnrengelman.plugin-shadow" version "2.0.2"
 }
 
 apply plugin: 'net.minecraftforge.gradle.forge'
@@ -54,8 +54,11 @@ repositories {
 }
 
 dependencies {
-    compile group: "net.shadowfacts", name: "Forgelin", version: "1.6.0"
-//    compile group: "net.shadowfacts", name: "ShadowMC", version: "1.10.2-3.6.0"
+    shadow group: "net.shadowfacts", name: "Forgelin", version: "1.6.0"
+    compile group: 'io.prometheus', name: 'simpleclient', version: '0.0.19'
+    compile group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.0.19'
+    compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.0.19'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '8.1.19.v20160209'
 }
 
 sourceSets {
@@ -87,6 +90,14 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
+configureRelocationShadowJar {
+  prefix = "info.brage.repack"
+}
+
+shadowJar {
+    classifier = ""
+}
+
 curseforge {
     apiKey = project.hasProperty('curseForgeApiKey') ? project.curseForgeApiKey : ""
     project {
@@ -106,27 +117,10 @@ curseforge {
             displayName = "Prometheus-Integration $project.version Sources"
         }
 //        addArtifact(deobfJar) {
-//            displayName = "Literal Ascension $project.version Deobfuscated"
+//            displayName = "Prometheus-Integration $project.version Deobfuscated"
 //        }
     }
 }
-
-dependencies {
-    compile group: 'io.prometheus', name: 'simpleclient', version: '0.0.19'
-    compile group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.0.19'
-    compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.0.19'
-    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '8.1.19.v20160209'
-}
-
-shadowJar {
-    classifier = ""
-    relocate "javax.servlet", "info.brage.repack.javax.servlet"
-    relocate "io.prometheus", "info.brage.repack.io.prometheus"
-    relocate "org.eclipse", "info.brage.repack.org.eclipse"
-    relocate "org.jetbrains", "info.brage.repack.org.jetbrains"
-}
-
-tasks.build.dependsOn sourceJar, shadowJar
 
 artifacts {
     archives shadowJar
@@ -135,6 +129,7 @@ artifacts {
 
 reobf { shadowJar { mappingType = 'SEARGE' } }
 tasks.reobfShadowJar.mustRunAfter shadowJar
+tasks.build.dependsOn sourceJar, shadowJar
 afterEvaluate {
 	tasks.curseforge254573.dependsOn reobfShadowJar
 }
