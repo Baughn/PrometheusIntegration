@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.0.5-2'
+    ext.kotlin_version = '1.2.0'
     repositories {
         jcenter()
         maven {
@@ -49,12 +49,12 @@ minecraft {
 repositories {
     maven {
         name 'shadowfacts'
-        url 'http://mvn.rx14.co.uk/shadowfacts/'
+        url 'http://maven.shadowfacts.net/'
     }
 }
 
 dependencies {
-    compile group: "net.shadowfacts", name: "Forgelin", version: "1.1.0"
+    compile group: "net.shadowfacts", name: "Forgelin", version: "1.6.0"
 //    compile group: "net.shadowfacts", name: "ShadowMC", version: "1.10.2-3.6.0"
 }
 
