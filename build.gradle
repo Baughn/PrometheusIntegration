@@ -49,7 +49,7 @@ minecraft {
 repositories {
     maven {
         name 'shadowfacts'
-        url 'http://maven.shadowfacts.net/'
+        url 'https://maven.shadowfacts.net/'
     }
 }
 
