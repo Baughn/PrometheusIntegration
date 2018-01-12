@@ -1,3 +1,7 @@
+## 0.2.2
+
+Removed Jetty in favor of the built-in HttpServer.
+
 ## 0.2.1
 
 Add quantiles to server/world tick times: 50th, 90th and 95th percentile.
