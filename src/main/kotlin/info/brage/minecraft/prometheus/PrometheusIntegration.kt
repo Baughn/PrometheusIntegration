@@ -3,14 +3,12 @@ package info.brage.minecraft.prometheus
 import io.prometheus.client.Counter
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
-import io.prometheus.client.exporter.MetricsServlet
+import io.prometheus.client.exporter.HTTPServer
 import io.prometheus.client.hotspot.DefaultExports
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraftforge.common.ForgeChunkManager
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.common.config.Configuration
-import net.minecraftforge.event.terraingen.ChunkGeneratorEvent
-import net.minecraftforge.event.terraingen.OreGenEvent
 import net.minecraftforge.event.terraingen.PopulateChunkEvent
 import net.minecraftforge.fml.common.FMLCommonHandler
 import net.minecraftforge.fml.common.Mod
@@ -18,9 +16,6 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.servlet.ServletHolder
 import java.util.*
 
 
@@ -30,25 +25,19 @@ const val VERSION = "1.0"
 @Mod(modid = MODID, version = VERSION, acceptedMinecraftVersions="[1.10.2,)", acceptableRemoteVersions = "*")
 class PrometheusIntegration {
 
-    var jettyPort: Int = 0
+    private var httpPort: Int = 0
 
     @Mod.EventHandler
     fun preInit(event: FMLPreInitializationEvent) {
         val config = Configuration(event.suggestedConfigurationFile)
         config.load()
-        jettyPort = config.getInt("jetty", "ports", 1234, 1025, 32767, "Port to run the metrics-server on.")
+        httpPort = config.getInt("jetty", "ports", 1234, 1025, 32767, "Port to run the metrics-server on.")
         config.save()
     }
 
     @Mod.EventHandler
     fun init(event: FMLInitializationEvent) {
-        // Start up Jetty.
-        val server = Server(jettyPort)
-        val context = ServletContextHandler()
-        context.contextPath = "/"
-        server.handler = context
-        context.addServlet(ServletHolder(MetricsServlet()), "/metrics")
-        server.start()
+        val server = HTTPServer(httpPort, true)
 
         // Get some Hotspot stats.
         DefaultExports.initialize()

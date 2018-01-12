@@ -1,5 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.2.0'
+    ext.prometheus_version = "0.1.0"
     repositories {
         jcenter()
         maven {
@@ -29,7 +30,7 @@ allprojects {
     }
 }
 
-version = "0.2.1"
+version = "0.2.2"
 group = "info.brage"
 archivesBaseName = "prometheus-integration"
 
@@ -55,10 +56,9 @@ repositories {
 
 dependencies {
     shadow group: "net.shadowfacts", name: "Forgelin", version: "1.6.0"
-    compile group: 'io.prometheus', name: 'simpleclient', version: '0.0.19'
-    compile group: 'io.prometheus', name: 'simpleclient_servlet', version: '0.0.19'
-    compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.0.19'
-    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '8.1.19.v20160209'
+    compile group: 'io.prometheus', name: 'simpleclient', version: prometheus_version
+    compile group: 'io.prometheus', name: 'simpleclient_httpserver', version: prometheus_version
+    compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: prometheus_version
 }
 
 sourceSets {
