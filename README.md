@@ -1,4 +1,6 @@
 # Quick Start
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FBaughn%2FPrometheusIntegration.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FBaughn%2FPrometheusIntegration?ref=badge_shield)
+
 
 * Add PrometheusIntegration to the mods/ directory of your server.
   You can download it from https://madoka.brage.info/release/
@@ -66,3 +68,7 @@
             }
         }
     }
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FBaughn%2FPrometheusIntegration.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FBaughn%2FPrometheusIntegration?ref=badge_large)
