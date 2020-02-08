@@ -3,7 +3,7 @@
 
 
 * Add PrometheusIntegration to the mods/ directory of your server.
-  You can download it from https://madoka.brage.info/release/
+  You can download it from https://www.curseforge.com/minecraft/mc-mods/prometheus-integration.
 
 * Install docker on your server, by whichever means.
 
